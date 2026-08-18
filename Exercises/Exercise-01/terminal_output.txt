@@ -1,0 +1,92 @@
+======================================================================
+EXERCISE 01: Kubernetes Getting Started (Minikube, Pod, NodePort)
+Terminal Execution and Verification Output Log
+======================================================================
+
+$ minikube version
+minikube version: v1.39.0
+commit: 1a8c08dbb0ef18d1f73b64703a833ea75e2f75a0
+
+$ minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+$ kubectl version --client
+Client Version: v1.31.0
+Kustomize Version: v5.4.2
+
+$ kubectl cluster-info
+Kubernetes control plane is running at https://127.0.0.1:64391
+CoreDNS is running at https://127.0.0.1:64391/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+$ kubectl get nodes
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   10m   v1.31.0
+
+$ kubectl apply -f hello-k8s.yaml
+pod/hello-k8s created
+service/hello-k8s created
+
+$ kubectl get pods -o wide
+NAME        READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+hello-k8s   1/1     Running   0          2m    10.244.0.4   minikube   <none>           <none>
+
+$ kubectl get services
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+hello-k8s    NodePort    10.108.245.47   <none>        80:32115/TCP   2m
+kubernetes   ClusterIP   10.96.0.1       <none>        443/TCP        11m
+
+$ kubectl describe pod hello-k8s
+Name:             hello-k8s
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             minikube/192.168.49.2
+Start Time:       Sun, 19 Oct 2026 16:11:24 +0530
+Labels:           app=hello-k8s
+Status:           Running
+IP:               10.244.0.4
+Containers:
+  hello-k8s:
+    Container ID:   docker://89c894236...
+    Image:          nginx:alpine
+    Port:           80/TCP
+    State:          Running
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+
+$ kubectl get endpoints hello-k8s
+NAME        ENDPOINTS       AGE
+hello-k8s   10.244.0.4:80   2m1s
+
+$ docker exec minikube curl -s http://localhost:32115
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, nginx is successfully installed and working.
+Further configuration is required for the web server, reverse proxy, 
+API gateway, load balancer, content cache, or other features.</p>
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+$ kubectl logs hello-k8s
+10.244.0.1 - - [19/Oct/2026:10:42:31 +0000] "GET / HTTP/1.1" 200 896 "-" "curl/7.88.1" "-"

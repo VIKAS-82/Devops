@@ -1,0 +1,19 @@
+# Binaries and archives
+minikube.exe
+*.zip
+extracted/
+
+# Python cache & runtime
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+*.pid
+.venv/
+venv/
+ENV/
+
+# OS metadata
+Thumbs.db
+Desktop.ini
+.DS_Store
