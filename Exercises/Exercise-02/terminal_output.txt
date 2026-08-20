@@ -1,0 +1,73 @@
+======================================================================
+EXERCISE 02: Deploying Flask Application on Minikube using Kubectl & YAML
+Terminal Execution and Verification Output Log
+======================================================================
+
+$ docker build -t flask-app:latest .
+[+] Building 13.5s (9/9) FINISHED
+ => [internal] load build definition from Dockerfile
+ => [internal] load metadata for docker.io/library/python:3.8-slim
+ => [internal] load .dockerignore
+ => [internal] load build context
+ => [1/4] FROM docker.io/library/python:3.8-slim
+ => [2/4] WORKDIR /app
+ => [3/4] COPY . /app
+ => [4/4] RUN pip install flask
+ => exporting to image
+ => => naming to docker.io/library/flask-app:latest
+ => => unpacking to docker.io/library/flask-app:latest
+
+$ minikube image load flask-app:latest
+Image flask-app:latest successfully loaded into minikube cluster.
+
+$ kubectl apply -f flask-deployment.yaml
+deployment.apps/flask-app created
+service/flask-app-service created
+
+$ kubectl get pods -l app=flask-app
+NAME                             READY   STATUS    RESTARTS   AGE
+flask-app-59f7cdccb4-mq72l       1/1     Running   0          5s
+
+$ kubectl get services flask-app-service
+NAME                TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
+flask-app-service   NodePort   10.101.174.194   <none>        15000:31065/TCP   12s
+
+$ kubectl describe deployment flask-app
+Name:                   flask-app
+Namespace:              default
+CreationTimestamp:      Mon, 19 Oct 2026 16:15:10 +0530
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=flask-app
+Replicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=flask-app
+  Containers:
+   flask-app:
+    Image:         flask-app:latest
+    Port:          15000/TCP
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  50s   deployment-controller  Scaled up replica set flask-app-59f7cdccb4 from 0 to 1
+
+$ docker exec minikube curl -s http://localhost:31065
+Hello from Flask on Kubernetes!
+
+$ kubectl logs -l app=flask-app
+ * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:15000
+ * Running on http://10.244.0.5:15000
+Press CTRL+C to quit
+10.244.0.1 - - [19/Oct/2026 10:45:32] "GET / HTTP/1.1" 200 -
