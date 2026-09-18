@@ -1,0 +1,84 @@
+======================================================================
+EXERCISE 03: Scaling Flask Application on Single Node using ReplicaSets
+Terminal Execution and Verification Output Log
+======================================================================
+
+$ docker build -t flashsale:1.0 .
+[+] Building 7.2s (9/9) FINISHED
+ => [internal] load build definition from Dockerfile
+ => [internal] load metadata for docker.io/library/python:3.11-slim
+ => [1/4] FROM docker.io/library/python:3.11-slim
+ => [2/4] WORKDIR /app
+ => [3/4] COPY app.py .
+ => [4/4] RUN pip install --no-cache-dir flask gunicorn
+ => exporting to image
+ => => naming to docker.io/library/flashsale:1.0
+ => => unpacking to docker.io/library/flashsale:1.0
+
+$ minikube image load flashsale:1.0
+Image flashsale:1.0 successfully loaded into minikube cluster.
+
+$ kubectl apply -f flashsale-replicaset.yaml
+replicaset.apps/flashsale-rs created
+service/flashsale-svc created
+
+$ kubectl get rs,pods -l app=flashsale
+NAME                           DESIRED   CURRENT   READY   AGE
+replicaset.apps/flashsale-rs   3         3         3       10s
+
+NAME                     READY   STATUS    RESTARTS   AGE
+pod/flashsale-rs-jpqk5   1/1     Running   0          10s
+pod/flashsale-rs-kj5z7   1/1     Running   0          10s
+pod/flashsale-rs-zc5wf   1/1     Running   0          10s
+
+$ kubectl get svc flashsale-svc
+NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+flashsale-svc   ClusterIP   10.106.178.188   <none>        80/TCP    18s
+
+$ docker exec minikube curl -s http://10.106.178.188/
+{"message":"Welcome to Big Sale!","pod":"flashsale-rs-jpqk5","ts":1792406897.6808414}
+
+$ docker exec minikube curl -s http://10.106.178.188/buy
+{"item":"Laptop","served_by_pod":"flashsale-rs-kj5z7","status":"success","time":"10:48:17","user":"user45"}
+
+$ docker exec minikube curl -s http://10.106.178.188/health
+{"pod":"flashsale-rs-jpqk5","status":"healthy"}
+
+$ kubectl scale rs flashsale-rs --replicas=5
+replicaset.apps/flashsale-rs scaled
+
+$ kubectl get pods -l app=flashsale
+NAME                 READY   STATUS    RESTARTS   AGE
+flashsale-rs-jpqk5   1/1     Running   0          47s
+flashsale-rs-kj5z7   1/1     Running   0          47s
+flashsale-rs-pnjr4   1/1     Running   0          9s
+flashsale-rs-smnv4   1/1     Running   0          9s
+flashsale-rs-zc5wf   1/1     Running   0          47s
+
+$ kubectl delete pod flashsale-rs-jpqk5
+pod "flashsale-rs-jpqk5" deleted from default namespace
+
+$ kubectl get pods -l app=flashsale
+NAME                 READY   STATUS    RESTARTS   AGE
+flashsale-rs-kj5z7   1/1     Running   0          66s
+flashsale-rs-mrppm   1/1     Running   0          10s
+flashsale-rs-pnjr4   1/1     Running   0          28s
+flashsale-rs-smnv4   1/1     Running   0          28s
+flashsale-rs-zc5wf   1/1     Running   0          66s
+
+$ kubectl describe rs flashsale-rs
+Name:         flashsale-rs
+Namespace:    default
+Selector:     app=flashsale
+Labels:       app=flashsale
+Replicas:     5 current / 5 desired
+Pods Status:  5 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Events:
+  Type    Reason            Age   From                   Message
+  ----    ------            ----  ----                   -------
+  Normal  SuccessfulCreate  82s   replicaset-controller  Created pod: flashsale-rs-zc5wf
+  Normal  SuccessfulCreate  82s   replicaset-controller  Created pod: flashsale-rs-jpqk5
+  Normal  SuccessfulCreate  82s   replicaset-controller  Created pod: flashsale-rs-kj5z7
+  Normal  SuccessfulCreate  44s   replicaset-controller  Created pod: flashsale-rs-pnjr4
+  Normal  SuccessfulCreate  44s   replicaset-controller  Created pod: flashsale-rs-smnv4
+  Normal  SuccessfulCreate  26s   replicaset-controller  Created pod: flashsale-rs-mrppm
