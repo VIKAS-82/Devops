@@ -1,0 +1,66 @@
+=== EXERCISE 04: DOCKER NETWORKING TERMINAL EXECUTION & VERIFICATION ===
+
+Command: docker network create --driver bridge my-bridge-net
+Output:
+09f0bcd3c2879cfdc0cadbb6331e8bdfe4c411d384ac767d578a4d7e049c9b82
+
+Command: docker network ls
+Output:
+NETWORK ID     NAME            DRIVER    SCOPE
+0afb0f7a014f   bridge          bridge    local
+23f5132b095a   host            host      local
+09f0bcd3c287   my-bridge-net   bridge    local
+64bea0928a0d   none            null      local
+
+Command: docker build -t flask-api .
+Output:
+Successfully built flask-api:latest
+
+Command: docker run -d --name mysql --net=my-bridge-net -e MYSQL_ROOT_PASSWORD=root mysql:latest
+Output:
+881fc87991a149826001b3aff4ea4a210329a61c6e30fc003eaa860d36a79f93
+
+Command: docker run -d --name redis --net=my-bridge-net redis:latest
+Output:
+12d429471805d7cfdfc8aaff15da93af5de5bef941b656402373757858661a44
+
+Command: docker run -d --name flask --net=my-bridge-net -p 5001:5001 flask-api
+Output:
+ae1d83301fda9025a2f067bbb0ef8e16e18977ff20033696087470dc3a488e4b
+
+Command: docker ps
+Output:
+CONTAINER ID   IMAGE          COMMAND                  CREATED              STATUS              PORTS                                         NAMES
+ae1d83301fda   flask-api      "python app.py"          10 seconds ago       Up 10 seconds       0.0.0.0:5001->5001/tcp, [::]:5001->5001/tcp   flask
+12d429471805   redis:latest   "docker-entrypoint.s…"   10 seconds ago       Up 10 seconds       6379/tcp                                      redis
+881fc87991a1   mysql:latest   "docker-entrypoint.s…"   About a minute ago   Up About a minute   3306/tcp, 33060/tcp                           mysql
+
+Command: curl http://localhost:5001/about
+Output:
+{
+  "description": "This is a simple REST API built with Flask.", 
+  "name": "Simple REST API", 
+  "version": "1.0"
+}
+
+Command: docker exec flask ping -c 3 mysql
+Output:
+PING mysql (172.18.0.2) 56(84) bytes of data.
+64 bytes from mysql.my-bridge-net (172.18.0.2): icmp_seq=1 ttl=64 time=1.13 ms
+64 bytes from mysql.my-bridge-net (172.18.0.2): icmp_seq=2 ttl=64 time=0.646 ms
+64 bytes from mysql.my-bridge-net (172.18.0.2): icmp_seq=3 ttl=64 time=0.144 ms
+
+--- mysql ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2007ms
+rtt min/avg/max/mdev = 0.144/0.640/1.130/0.402 ms
+
+Command: docker exec flask ping -c 3 redis
+Output:
+PING redis (172.18.0.3) 56(84) bytes of data.
+64 bytes from redis.my-bridge-net (172.18.0.3): icmp_seq=1 ttl=64 time=0.256 ms
+64 bytes from redis.my-bridge-net (172.18.0.3): icmp_seq=2 ttl=64 time=0.917 ms
+64 bytes from redis.my-bridge-net (172.18.0.3): icmp_seq=3 ttl=64 time=0.085 ms
+
+--- redis ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2008ms
+rtt min/avg/max/mdev = 0.085/0.419/0.917/0.358 ms
