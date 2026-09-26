@@ -1,0 +1,34 @@
+=== EXERCISE 05: DOCKER SECURITY WITH APPARMOR AND PYTHON ===
+
+Step 1: Docker Image Build
+Command: docker build -t flask-apparmor .
+Output:
+Successfully built flask-apparmor:latest
+
+Step 2: Apply AppArmor Profile via Docker SDK
+Command: python apply_apparmor.py
+Output:
+Building image from Dockerfile...
+[INFO] Step 1/6 : FROM python:3.8-slim
+[INFO] Step 2/6 : WORKDIR /app
+[INFO] Step 3/6 : COPY . /app
+[INFO] Step 4/6 : RUN pip install flask
+[INFO] Successfully built flask-apparmor
+
+Running container with AppArmor profile...
+Container started: be52323c9e25
+
+Inspecting container to verify AppArmor profile...
+AppArmor profile applied: ['apparmor=my-apparmor-profile']
+
+Stopping the container...
+Container stopped and removed.
+
+Step 3: Test Restricted Actions via Docker SDK
+Command: python test_restricted_actions.py
+Output:
+Running container with AppArmor profile for restriction testing...
+Container started: 70003ccd5da7
+Attempt to read /etc/passwd: Exit Code 1, Output: Permission denied
+Attempt to execute /bin/bash: Exit Code 126, Output: Permission denied
+Container stopped and removed.
