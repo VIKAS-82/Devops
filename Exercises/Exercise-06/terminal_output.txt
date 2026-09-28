@@ -1,0 +1,55 @@
+=== EXERCISE 06: REAL-TIME OPERATIONS MONITORING AND ALERTING ===
+
+Step 1: Python Metrics Simulation Script Execution
+Command: python delivery_metrics.py
+Output:
+[INFO] Starting the HTTP server on port 8000...
+[INFO] HTTP server started. Simulating deliveries...
+[DEBUG] Total deliveries: 99
+[DEBUG] Pending deliveries: 20
+[DEBUG] On-the-way deliveries: 15
+[DEBUG] Average delivery time: 30.76 seconds
+
+Step 2: Metrics Endpoint Verification
+Command: curl http://localhost:8000/metrics
+Output:
+# HELP total_deliveries Total number of deliveries
+# TYPE total_deliveries gauge
+total_deliveries 99.0
+# HELP pending_deliveries Number of pending deliveries
+# TYPE pending_deliveries gauge
+pending_deliveries 20.0
+# HELP on_the_way_deliveries Number of deliveries on the way
+# TYPE on_the_way_deliveries gauge
+on_the_way_deliveries 15.0
+
+Step 3: Prometheus Container Launch & Scraping Verification
+Command: docker run -d --name prometheus -p 9090:9090 -v ${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml -v ${PWD}/alert_rules.yml:/etc/prometheus/alert_rules.yml prom/prometheus
+Output:
+24d5edc276609b40ba3886378da13ca4e69d720581e76a1f2a247e315b6d1735
+
+Command: curl http://localhost:9090/-/healthy
+Output:
+Prometheus Server is Healthy.
+
+Command: curl http://localhost:9090/api/v1/targets
+Output:
+{"status":"success","data":{"activeTargets":[{"discoveredLabels":{"__address__":"host.docker.internal:8000"},"labels":{"instance":"host.docker.internal:8000","job":"delivery_service"},"scrapePool":"delivery_service","scrapeUrl":"http://host.docker.internal:8000/metrics","health":"up"}]}}
+
+Step 4: Prometheus Query & Alert Evaluation Verification
+Command: curl "http://localhost:9090/api/v1/query?query=pending_deliveries"
+Output:
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"pending_deliveries","instance":"host.docker.internal:8000","job":"delivery_service"},"value":[1792405168.161,"14"]}]}}
+
+Command: curl http://localhost:9090/api/v1/rules
+Output:
+{"status":"success","data":{"groups":[{"name":"delivery_alerts","rules":[{"state":"pending","name":"HighPendingDeliveries","query":"pending_deliveries > 10","value":"1.8e+01"},{"state":"firing","name":"HighAverageDeliveryTime","query":"(average_delivery_time_sum / average_delivery_time_count) > 30","value":"3.075976343361107e+01"}]}]}}
+
+Step 5: Grafana Container Launch & Data Source Configuration
+Command: docker run -d --name grafana -p 3000:3000 grafana/grafana
+Output:
+ebbc8cdab37f5c8178815d1e8bb78bf4f2e1b44d824d789c8a668fb990f7c9c6
+
+Command: curl -X POST -H "Content-Type: application/json" -d '{"name":"Prometheus","type":"prometheus","url":"http://host.docker.internal:9090","access":"proxy","isDefault":true}' http://admin:admin@localhost:3000/api/datasources
+Output:
+{"id":1,"message":"Datasource added","name":"Prometheus"}
