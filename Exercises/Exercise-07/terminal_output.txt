@@ -1,0 +1,29 @@
+=== EXERCISE 07: JENKINS INSTALLATION AND INTRODUCTION TO CI/CD ===
+
+Command: docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts
+Output:
+Unable to find image 'jenkins/jenkins:lts' locally
+lts: Pulling from jenkins/jenkins
+...
+Digest: sha256:a660310e39ade10631f774bacd5219de767dfd08947ea5c32a739b5e5bb382c1
+Status: Downloaded newer image for jenkins/jenkins:lts
+1f53998505e8c35d404b36b18af4465cd982e0640e2f15731495b4c89df95410
+
+Command: docker ps
+Output:
+CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS          PORTS                                                                                          NAMES
+1f53998505e8   jenkins/jenkins:lts   "/usr/bin/tini -- /u…"   12 seconds ago   Up 12 seconds   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp, 0.0.0.0:50000->50000/tcp, [::]:50000->50000/tcp   jenkins
+
+Command: docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+Output:
+6e6bc9f5c69948b6b125a72623e8becb
+
+Command: curl -I http://localhost:8080
+Output:
+HTTP/1.1 403 Forbidden
+Server: Jetty(12.1.13)
+X-Hudson: 1.395
+X-Jenkins: 2.580.1
+X-Jenkins-Session: b61ad666
+X-You-Are-Authenticated-As: anonymous
+X-Required-Permission: hudson.model.Hudson.Administer
