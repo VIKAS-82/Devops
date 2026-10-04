@@ -1,0 +1,40 @@
+=== EXERCISE 08: CREATING "HELLO WORLD" CI/CD JENKINS JOB ===
+
+Step 1: Local Script Creation
+Script: hello-world.sh
+Content:
+#!/bin/bash
+echo "Hello, Jenkins!"
+
+Step 2: Local Git Repository Initialization & Commit
+Command: git init
+Output: Initialized empty Git repository in D:/Devops_Assignment/Exercises/Exercise-08/.git/
+
+Command: git add hello-world.sh
+Command: git status
+Output:
+On branch main
+No commits yet
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+        new file:   hello-world.sh
+
+Command: git commit -m "Add hello-world.sh"
+Output:
+[main (root-commit) b0c7963] Add hello-world.sh
+ 1 file changed, 2 insertions(+)
+ create mode 100644 hello-world.sh
+
+Step 3: Jenkins Job Configuration
+Job Name: HelloWorld
+Type: Freestyle Project
+Build Step: Execute Shell
+Command: sh hello-world.sh
+
+Step 4: Jenkins Job Execution & Console Output
+Started by user Admin
+Building in workspace /var/jenkins_home/workspace/HelloWorld
+[HelloWorld] $ /bin/sh -xe /tmp/jenkins1281930102.sh
++ echo 'Hello, Jenkins!'
+Hello, Jenkins!
+Finished: SUCCESS
