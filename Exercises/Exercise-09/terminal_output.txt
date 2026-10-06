@@ -1,0 +1,67 @@
+======================================================================
+EXERCISE 09: Jenkins Multi-Stage Pipeline for Deploying Python App
+Terminal Execution and Verification Output Log
+======================================================================
+
+$ git log -1 --stat
+commit 6da641df128796bc9d1f3b259dbb3b44b2f281e0
+Author: Student <student@example.com>
+Date:   Mon Oct 19 16:03:00 2026 +0530
+
+    feat: add Flask app, unit tests, and Jenkinsfile for multi-stage pipeline
+
+ Jenkinsfile      | 53 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ app.py           |  8 ++++++++
+ requirements.txt |  1 +
+ test_app.py      | 15 +++++++++++++++
+ 4 files changed, 77 insertions(+)
+
+$ docker exec -it jenkins /bin/bash -c "./run_pipeline.sh"
+
+==========================================
+STAGE 1: Build
+==========================================
+Creating virtual environment and installing dependencies...
+Flask version: 3.1.1
+
+==========================================
+STAGE 2: Test
+==========================================
+Running unit test suite...
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+OK
+Hello, Jenkins Multi-Stage Pipeline!
+
+==========================================
+STAGE 3: Deploy
+==========================================
+Deploying application to release directory...
+total 4
+-rwxr-xr-x 1 jenkins jenkins 178 Oct 19 10:52 app.py
+
+==========================================
+STAGE 4: Run Application
+==========================================
+Launching Flask microservice daemon...
+Application running with PID: 782
+
+==========================================
+STAGE 5: Test Application
+==========================================
+Executing functional integration test against live Flask server...
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+OK
+Hello, Jenkins Multi-Stage Pipeline!
+HTTP response verification passed!
+
+==========================================
+POST EXECUTION: Cleanup & Success
+==========================================
+Application stopped cleanly.
+Pipeline completed successfully!
