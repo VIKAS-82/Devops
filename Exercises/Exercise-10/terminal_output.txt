@@ -1,0 +1,81 @@
+======================================================================
+EXERCISE 10: Multi-Node Kubernetes Cluster with Multiple Applications
+Terminal Execution and Verification Output Log
+======================================================================
+
+$ minikube node list
+minikube	192.168.49.2
+
+$ minikube node add
+* Adding node m02 to cluster minikube as [worker]
+* Starting "minikube-m02" worker node in "minikube" cluster
+* Preparing Kubernetes v1.37.0 on containerd 2.3.4 ...
+* Verifying Kubernetes components...
+* Successfully added m02 to minikube!
+
+$ minikube node add
+* Adding node m03 to cluster minikube as [worker]
+* Starting "minikube-m03" worker node in "minikube" cluster
+* Preparing Kubernetes v1.37.0 on containerd 2.3.4 ...
+* Verifying Kubernetes components...
+* Successfully added m03 to minikube!
+
+$ kubectl get nodes -o wide
+NAME           STATUS   ROLES           AGE   VERSION   INTERNAL-IP    OS-IMAGE                         CONTAINER-RUNTIME
+minikube       Ready    control-plane   18m   v1.37.0   192.168.49.2   Debian GNU/Linux 12 (bookworm)   containerd://2.3.4
+minikube-m02   Ready    <none>          4m    v1.37.0   192.168.49.3   Debian GNU/Linux 12 (bookworm)   containerd://2.3.4
+minikube-m03   Ready    <none>          56s   v1.37.0   192.168.49.4   Debian GNU/Linux 12 (bookworm)   containerd://2.3.4
+
+$ docker build -f Dockerfile.product -t product-catalog:latest .
+Successfully tagged product-catalog:latest
+
+$ docker build -f Dockerfile.shopping -t shopping-cart:latest .
+Successfully tagged shopping-cart:latest
+
+$ minikube image load product-catalog:latest
+$ minikube image load shopping-cart:latest
+
+$ kubectl apply -f product_catalog_deployment.yaml
+deployment.apps/product-catalog created
+
+$ kubectl apply -f product_catalog_service.yaml
+service/product-catalog-service created
+
+$ kubectl apply -f shopping_cart_deployment.yaml
+deployment.apps/shopping-cart created
+
+$ kubectl apply -f shopping_cart_service.yaml
+service/shopping-cart-service created
+
+$ kubectl get pods -o wide
+NAME                             READY   STATUS    RESTARTS   AGE     IP            NODE           NOMINATED NODE   READINESS GATES
+product-catalog-7cb85d4f-pnjvh   1/1     Running   0          2m24s   10.244.1.2    minikube-m02   <none>           <none>
+product-catalog-7cb85d4f-tfsx7   1/1     Running   0          2m24s   10.244.0.12   minikube       <none>           <none>
+shopping-cart-6858b5f797-7wksn   1/1     Running   0          2m24s   10.244.1.3    minikube-m02   <none>           <none>
+shopping-cart-6858b5f797-8szgh   1/1     Running   0          2m24s   10.244.2.2    minikube-m03   <none>           <none>
+shopping-cart-6858b5f797-n7pz7   1/1     Running   0          2m24s   10.244.0.13   minikube       <none>           <none>
+
+$ kubectl get svc
+NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+kubernetes                ClusterIP   10.96.0.1        <none>        443/TCP        17m
+product-catalog-service   NodePort    10.108.36.49     <none>        80:31914/TCP   49s
+shopping-cart-service     NodePort    10.110.193.109   <none>        80:30608/TCP   48s
+
+$ docker exec minikube curl -s http://10.108.36.49/products
+[{"id":1,"name":"Laptop","price":1200},{"id":2,"name":"Phone","price":800},{"id":3,"name":"Headphones","price":150}]
+
+$ docker exec minikube curl -s http://10.110.193.109/cart
+[]
+
+$ docker exec minikube curl -s -X POST -H "Content-Type: application/json" -d '{"id": 2, "name": "Phone", "price": 800}' http://10.110.193.109/cart
+[{"id":2,"name":"Phone","price":800}]
+
+$ kubectl logs -l app=product-catalog --all-containers=true --prefix=true
+[pod/product-catalog-7cb85d4f-tfsx7/product-catalog-container] 10.244.0.1 - - [19/Oct/2026 10:59:17] "GET /products HTTP/1.1" 200 -
+[pod/product-catalog-7cb85d4f-pnjvh/product-catalog-container] 192.168.49.2 - - [19/Oct/2026 10:57:40] "GET /products HTTP/1.1" 200 -
+
+$ kubectl logs -l app=shopping-cart --all-containers=true --prefix=true
+[pod/shopping-cart-6858b5f797-7wksn/shopping-cart-container] 192.168.49.2 - - [19/Oct/2026 10:57:52] "GET /cart HTTP/1.1" 200 -
+[pod/shopping-cart-6858b5f797-7wksn/shopping-cart-container] 192.168.49.2 - - [19/Oct/2026 10:57:52] "POST /cart HTTP/1.1" 201 -
+[pod/shopping-cart-6858b5f797-8szgh/shopping-cart-container] 192.168.49.2 - - [19/Oct/2026 10:59:18] "POST /cart HTTP/1.1" 201 -
+[pod/shopping-cart-6858b5f797-n7pz7/shopping-cart-container] 10.244.0.1 - - [19/Oct/2026 10:59:17] "GET /cart HTTP/1.1" 200 -
